@@ -12,7 +12,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_ROOTS = {".github", "crates", "docs", "examples", "licenses", "scripts", "src", "tests"}
-PUBLIC_FILES = {".gitignore", "Cargo.lock", "Cargo.toml", "LICENSE", "README.md",
+PUBLIC_FILES = {".gitattributes", ".gitignore", "Cargo.lock", "Cargo.toml", "LICENSE", "README.md",
                 "THIRD_PARTY_NOTICES.md", "pyproject.toml", "uv.lock"}
 PRIVATE_PARTS = {".internal", "research", "corpus", ".venv", "target", "dist", "__pycache__", ".aws", ".codex"}
 OWNER_PATH = re.compile(rb"(?:/(?:home|Users)/[^/\s\x00]+/|[A-Za-z]:[\\/]Users[\\/][^\\/\s\x00]+[\\/])")

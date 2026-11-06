@@ -1,0 +1,2 @@
+# Keep text identical across checkouts and source distributions.
+* text=auto eol=lf
