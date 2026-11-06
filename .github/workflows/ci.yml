@@ -59,7 +59,7 @@ jobs:
       - run: cargo test --workspace --locked
       - run: uv run --locked pytest
       - run: uv run --locked python scripts/build_python_release.py
-      - run: uv run --locked maturin sdist
+      - run: uv run --locked maturin sdist --out dist
       - run: uv run --locked python scripts/check_python_release.py --dist dist
       - run: uv run --locked python scripts/smoke_python_release.py --dist dist --sdist
       - uses: actions/upload-artifact@v4

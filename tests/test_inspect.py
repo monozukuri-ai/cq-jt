@@ -125,7 +125,8 @@ def test_file_argument_and_io_errors(tmp_path):
         cq_jt.inspect_file(bytes(tmp_path))
     with pytest.raises(FileNotFoundError):
         cq_jt.inspect_file(tmp_path / "missing.jt")
-    with pytest.raises(IsADirectoryError):
+    # Preserve the native OS error: Windows denies opening a directory as a file.
+    with pytest.raises(PermissionError if sys.platform == "win32" else IsADirectoryError):
         cq_jt.inspect_file(tmp_path)
 
 

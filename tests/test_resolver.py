@@ -1,4 +1,5 @@
 from dataclasses import replace
+from pathlib import Path
 import struct
 
 import pytest
@@ -24,7 +25,8 @@ def test_external_cache_units_names_and_source_scoped_ids(tmp_path):
     assert len(scene.meshes)==1 and len(scene.instances)==4
     assert len({i.mesh_id for i in scene.instances})==1
     assert scene.structure.sources[0].source_id==str(root)
-    assert scene.structure.sources[1].source_id==str(part.resolve())
+    external_path=Path(scene.structure.sources[1].source_id)
+    assert external_path.is_absolute() and external_path.samefile(part)
     buffers=scene.mesh_buffers(0)
     assert struct.unpack_from("<3d",buffers.positions.data,24)==pytest.approx((.0254,0.,0.))
     states=[scene.structure.instances[i.structure_instance_id] for i in scene.instances]

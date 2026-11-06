@@ -1,6 +1,7 @@
 """Specification-derived controls only; these are not native JT 10.6 exports."""
 from dataclasses import replace
 import json
+from pathlib import Path
 import struct
 import subprocess
 import sys
@@ -84,7 +85,9 @@ def test_jt106_external_source_provenance_and_cli(tmp_path):
     assert scene.complete and len(scene.structure.sources)==2
     assert scene.to_model().to_dict()['profile']=="mesh-assembly-experimental"
     assert len(scene.meshes)==1 and len(scene.instances)==2
-    assert any(d.code=="unverified_jt106_profile" and d.source.source_id==str(part.resolve()) for d in scene.diagnostics)
+    external_id=scene.structure.sources[1].source_id
+    assert Path(external_id).is_absolute() and Path(external_id).samefile(part)
+    assert any(d.code=="unverified_jt106_profile" and d.source.source_id==external_id for d in scene.diagnostics)
     for command in (["structure",str(part)],["mesh",str(part)],["convert",str(root),str(tmp_path/"out.glb")]):
         result=subprocess.run([sys.executable,"-m","cq_jt",*command,"--experimental-jt106","--json"],capture_output=True,text=True)
         assert result.returncode==0,result.stdout+result.stderr

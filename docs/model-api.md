@@ -26,6 +26,8 @@ report = jt.convert("assembly.jt", "converted.glb",
 
 `read` aliases `read_file`. File APIs accept `str` or a `PathLike` returning `str`. `read_bytes(data, source_id="upload.jt", options=...)` accepts bytes and performs no external file reads. File-based source IDs default to the input path; bytes-based source IDs default to `"input"`. Empty source IDs are rejected.
 
+Resolved external source IDs use operating-system canonical paths. On Windows these can include the extended-length `\\?\` prefix. Treat source IDs as opaque identities; use `Path(source_id).samefile(path)` to compare existing local files.
+
 `ReadOptions` contains `lod`, `structure: StructureOptions`, `mesh: MeshOptions` and `resolver: ResolverOptions`. `ReadLimits` is supplied separately as `limits=...`.
 
 `NativeMeshScene` owns immutable Rust meshes and retains decoded source buffers. It exposes `structure`, lightweight `meshes` metadata, selected mesh `instances`, `lod_choices`, `diagnostics` and `complete`. Numerical arrays are not automatically converted to Python objects. `to_model()` returns a frozen metadata-only `MeshScene` snapshot; it is not an editable geometry model or a round trip back into Rust.
@@ -241,6 +243,8 @@ Strict mode is the default. `StructureOptions(mode="best_effort")` can report pa
 | JtModelError | Invalid generic model metadata |
 | OSError subclasses | File IO errors |
 | TypeError / ValueError | Invalid argument types or ranges |
+
+File IO errors retain the native operating-system error. Opening a directory as an input raises `IsADirectoryError` on Unix and `PermissionError` on Windows.
 
 JT errors expose `code`, `source` and `offset`. Source spans are half-open ranges within a named byte domain. `file` means original-file offsets; `segment/<raw-guid-hex>/inflated` means offsets in an expanded segment. These domains must not be confused. Parse work and IO run without the Python GIL; conversion to typed Python values occurs at the binding boundary.
 
