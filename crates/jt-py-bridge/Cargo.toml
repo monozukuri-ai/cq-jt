@@ -1,0 +1,18 @@
+[package]
+name = "jt-py-bridge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Shared PyO3 conversions for the cq-jt model API"
+readme = "README.md"
+include = ["src/**", "Cargo.toml", "README.md", "LICENSE"]
+
+[features]
+default = []
+glb = ["jt-core/glb"]
+
+[dependencies]
+jt-core.workspace = true
+pyo3.workspace = true

@@ -1,0 +1,18 @@
+[package]
+name = "cq-jt-py"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Native Python module for the cq-jt model foundation"
+publish = false
+
+[lib]
+name = "_native"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+jt-core = { workspace = true, features = ["glb"] }
+jt-py-bridge = { workspace = true, features = ["glb"] }
+pyo3.workspace = true

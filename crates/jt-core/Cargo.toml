@@ -1,0 +1,20 @@
+[package]
+name = "jt-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Bounded JT container and logical-element decoding without Python"
+readme = "README.md"
+include = ["src/**", "Cargo.toml", "README.md", "LICENSE"]
+
+[features]
+default = []
+glb = ["dep:serde_json"]
+
+[dependencies]
+flate2 = { version = "=1.1.10", default-features = false, features = ["rust_backend"] }
+lzma-rust2 = { version = "=0.15.8", default-features = false, features = ["std", "xz"] }
+crc32fast = "=1.5.0"
+serde_json = { version = "=1.0.154", optional = true }

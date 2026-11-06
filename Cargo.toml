@@ -1,0 +1,15 @@
+[workspace]
+members = ["crates/jt-core", "crates/jt-py-bridge", "crates/cq-jt-py"]
+resolver = "2"
+
+[workspace.package]
+version = "0.3.0"
+edition = "2021"
+rust-version = "1.83"
+license = "MIT"
+repository = "https://github.com/monozukuri-ai/cq-jt"
+
+[workspace.dependencies]
+jt-core = { path = "crates/jt-core", version = "=0.3.0" }
+jt-py-bridge = { path = "crates/jt-py-bridge", version = "=0.3.0" }
+pyo3 = { version = "=0.29.2", features = ["abi3-py311"] }

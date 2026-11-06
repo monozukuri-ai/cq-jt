@@ -1,0 +1,14 @@
+# Private research, source snapshots, acquired CAD, reports and maintainer notes.
+/.internal/
+# Prevent accidentally recreating the former private-data locations.
+/research/
+__pycache__/
+*.pyc
+/target/
+/dist/
+/build/
+/.venv/
+/.pytest_cache/
+*.so
+*.pyd
+.DS_Store

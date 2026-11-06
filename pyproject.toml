@@ -1,0 +1,45 @@
+[build-system]
+requires = ["maturin>=1.11.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "cq-jt"
+dynamic = ["version"]
+description = "Bounded JT reading and GLB export with a Rust core and Python bindings"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "licenses/*.txt", "licenses/manifest.json"]
+dependencies = []
+
+[dependency-groups]
+dev = ["maturin==1.11.5", "pytest>=8,<10"]
+
+[tool.maturin]
+manifest-path = "crates/cq-jt-py/Cargo.toml"
+python-source = "src"
+module-name = "cq_jt._native"
+features = ["pyo3/extension-module"]
+strip = true
+include = [
+    { path = "docs/*.md", format = "sdist" },
+    { path = "uv.lock", format = "sdist" },
+    { path = "examples/*.py", format = "sdist" },
+    { path = "examples/README.md", format = "sdist" },
+]
+exclude = [
+    ".internal/**", "research/**", "corpus/**",
+    "tests/**", "scripts/**", ".github/**",
+]
+
+[tool.uv]
+cache-keys = [
+    { file = "pyproject.toml" },
+    { file = "Cargo.toml" },
+    { file = "Cargo.lock" },
+    { file = "crates/**/Cargo.toml" },
+    { file = "crates/**/*.rs" },
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

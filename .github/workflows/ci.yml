@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-core:
+    name: Python-independent core (${{ matrix.rust }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: ["1.83.0", stable]
+    env:
+      PYO3_PYTHON: /python-is-not-required-by-jt-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+      - run: cargo test -p jt-core --locked --no-default-features
+      - run: cargo test -p jt-core --locked --features glb
+
+  python-build:
+    name: Build and check (${{ matrix.target.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { name: linux-x86_64, runner: ubuntu-24.04 }
+          - { name: linux-aarch64, runner: ubuntu-24.04-arm }
+          - { name: windows-x86_64, runner: windows-latest }
+          - { name: macos-aarch64, runner: macos-15 }
+          - { name: macos-x86_64, runner: macos-15-intel }
+    runs-on: ${{ matrix.target.runner }}
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.17"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.83.0"
+          components: rustfmt, clippy
+      - run: python scripts/check_publication.py
+      - run: python scripts/sync_public_docs.py --check
+      - run: uv sync --locked --group dev --python python
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      - run: uv run --locked pytest
+      - run: uv run --locked python scripts/build_python_release.py
+      - run: uv run --locked maturin sdist
+      - run: uv run --locked python scripts/check_python_release.py --dist dist
+      - run: uv run --locked python scripts/smoke_python_release.py --dist dist --sdist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions-${{ matrix.target.name }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+
+  installed-wheel:
+    needs: python-build
+    name: Installed wheel (${{ matrix.target.name }}, ${{ matrix.python }})
+    runs-on: ${{ matrix.target.runner }}
+    env:
+      PYTHONUTF8: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+        target:
+          - { name: linux-x86_64, runner: ubuntu-24.04 }
+          - { name: linux-aarch64, runner: ubuntu-24.04-arm }
+          - { name: windows-x86_64, runner: windows-latest }
+          - { name: macos-aarch64, runner: macos-15 }
+          - { name: macos-x86_64, runner: macos-15-intel }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.17"
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-distributions-${{ matrix.target.name }}
+          path: dist
+      - run: python scripts/smoke_python_release.py --dist dist --python python
+
+  glb-validation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.17"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.83.0"
+      - run: uv sync --locked --group dev --python python
+      - run: npm install --prefix "$RUNNER_TEMP/validator" --no-audit --no-fund gltf-validator@2.0.0-dev.3.10
+      - run: uv run --locked python scripts/check_glb_exports.py --output-dir "$RUNNER_TEMP/glb" --report "$RUNNER_TEMP/exports.json"
+      - run: node scripts/validate_glb.cjs "$RUNNER_TEMP/validator/node_modules/gltf-validator" "$RUNNER_TEMP/validator.json" "$RUNNER_TEMP/glb/"*.glb
