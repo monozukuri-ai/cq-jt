@@ -4,11 +4,20 @@ A JT reader and GLB exporter with a Python-independent Rust core and thin Python
 
 Read product structure, part placements, materials and selected triangle meshes from **JT 9.5, 10.0 and 10.3**. Inspect container boundaries, decode ZLIB/XZ streams, resolve local external JT references, and retain source information and opaque data.
 
-JT 10.6 is available as an **explicit experimental opt-in**. Compatibility with native JT 10.6 exports has not been verified. See [compatibility and limitations](docs/compatibility.md).
+JT 10.6 is available as an **explicit experimental opt-in**. Compatibility with native JT 10.6 exports has not been verified. See [compatibility and limitations](https://github.com/monozukuri-ai/cq-jt/blob/main/docs/compatibility.md).
 
 ## Requirements and installation
 
-Python 3.11 or later is required. This project is under development and has not been published to PyPI.
+Python 3.11 or later is required. Install from [PyPI](https://pypi.org/project/cq-jt/):
+
+```bash
+python -m pip install cq-jt
+python -m cq_jt --help
+```
+
+Prebuilt wheels are available for Linux x86_64 and ARM64 (glibc 2.35+), Windows x86_64, and macOS Intel and Apple Silicon. Installing a compatible wheel does not require Rust, CadQuery, NumPy, Java, .NET or a CAD application. See [compatibility and limitations](https://github.com/monozukuri-ai/cq-jt/blob/main/docs/compatibility.md) for the supported JT profiles.
+
+If a compatible wheel is unavailable, pip builds from the source distribution, which requires Rust 1.83 or later.
 
 To build from a source checkout, install Rust 1.83 or later and [uv](https://docs.astral.sh/uv/), then run:
 
@@ -16,8 +25,6 @@ To build from a source checkout, install Rust 1.83 or later and [uv](https://doc
 uv sync --locked --group dev
 uv run python -m cq_jt --help
 ```
-
-To install a locally built wheel, use `python -m pip install /path/to/cq_jt-<version>-<tags>.whl`. Wheel users do not need Rust, CadQuery, NumPy, Java, .NET or a CAD application. Locally verified wheel environments are Linux x86_64 with CPython 3.11–3.14; other platforms are not yet verified.
 
 ## Quick start
 
@@ -54,11 +61,11 @@ python -m cq_jt convert part.jt part.glb --json
 
 ## Documentation
 
-- [Documentation index](docs/README.md)
-- [API guide](docs/model-api.md): reading, arrays, units, external references, export and errors
-- [Compatibility](docs/compatibility.md): supported profiles and experimental JT 10.6
-- [Conversion example](examples/README.md)
-- [Rust core](crates/jt-core/README.md)
+- [Documentation index](https://github.com/monozukuri-ai/cq-jt/blob/main/docs/README.md)
+- [API guide](https://github.com/monozukuri-ai/cq-jt/blob/main/docs/model-api.md): reading, arrays, units, external references, export and errors
+- [Compatibility](https://github.com/monozukuri-ai/cq-jt/blob/main/docs/compatibility.md): supported profiles and experimental JT 10.6
+- [Conversion example](https://github.com/monozukuri-ai/cq-jt/blob/main/examples/README.md)
+- [Rust core](https://github.com/monozukuri-ai/cq-jt/blob/main/crates/jt-core/README.md)
 
 ## Development
 
@@ -73,4 +80,4 @@ The included tests and fixtures can run from a public checkout without acquired 
 
 ## License
 
-MIT. Dependency licenses, Siemens format notices and other attributions are included in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [licenses/](licenses/).
+MIT. Dependency licenses, Siemens format notices and other attributions are included in [THIRD_PARTY_NOTICES.md](https://github.com/monozukuri-ai/cq-jt/blob/main/THIRD_PARTY_NOTICES.md) and [licenses/](https://github.com/monozukuri-ai/cq-jt/tree/main/licenses/).
