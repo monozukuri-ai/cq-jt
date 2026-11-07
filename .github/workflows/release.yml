@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  metadata:
+    name: Verify release identity
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.metadata.outputs.tag }}
+      source_sha: ${{ steps.metadata.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+      - id: metadata
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: python scripts/prepare_release.py metadata --tag "$RELEASE_TAG" --github-output "$GITHUB_OUTPUT"
+
+  qualify:
+    name: Qualify release distributions
+    needs: metadata
+    uses: ./.github/workflows/ci.yml
+
+  assemble:
+    name: Assemble verified release bundle
+    needs: [metadata, qualify]
+    runs-on: ubuntu-24.04
+    env:
+      RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
+      SOURCE_SHA: ${{ needs.metadata.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: python-distributions-*
+          path: artifacts
+      - name: Collect five wheels and the Linux x86_64 sdist
+        run: python scripts/prepare_release.py collect --artifacts artifacts --bundle bundle --tag "$RELEASE_TAG" --source-sha "$SOURCE_SHA"
+      - name: Validate package metadata
+        run: |
+          python -m pip install --disable-pip-version-check 'twine==7.0.0'
+          python -m twine check --strict bundle/dist/*
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-bundle
+          path: bundle/
+          if-no-files-found: error
+          retention-days: 30
+
+  pypi:
+    name: Publish qualified distributions to PyPI
+    needs: [metadata, assemble]
+    if: github.event_name == 'push' && github.ref_type == 'tag' && github.repository == 'monozukuri-ai/cq-jt'
+    runs-on: ubuntu-24.04
+    environment:
+      name: pypi
+      url: https://pypi.org/p/cq-jt
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
+      SOURCE_SHA: ${{ needs.metadata.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-bundle
+          path: bundle
+      - name: Verify hashes and existing PyPI files before publication
+        run: python scripts/prepare_release.py check-pypi --bundle bundle --tag "$RELEASE_TAG" --source-sha "$SOURCE_SHA"
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: bundle/dist/
+          # The preceding digest check permits only identical-file retries.
+          skip-existing: true
+          print-hash: true
+
+  github:
+    name: Publish the same bundle to GitHub Release
+    needs: [metadata, assemble, pypi]
+    if: github.event_name == 'push' && github.ref_type == 'tag' && github.repository == 'monozukuri-ai/cq-jt'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
+      SOURCE_SHA: ${{ needs.metadata.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-bundle
+          path: bundle
+      - name: Verify and attach distributions, manifest and checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/prepare_release.py github --bundle bundle --tag "$RELEASE_TAG" --source-sha "$SOURCE_SHA"
